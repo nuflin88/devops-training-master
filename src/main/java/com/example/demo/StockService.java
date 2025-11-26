@@ -52,7 +52,7 @@ public class StockService {
                     String priceString = jsonResponse.substring(valueStart, valueEnd);
                     double price = Double.parseDouble(priceString);
 
-                    return new StockDTO(symbol, "Alpha Vantage Stock", price);
+                    return new StockDTO(symbol, "Alpha Vantage Stock ", price);
                 }
             }
 
