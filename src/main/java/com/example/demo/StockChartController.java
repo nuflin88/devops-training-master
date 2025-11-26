@@ -19,6 +19,9 @@ public class StockChartController {
     @GetMapping("/chart")
     public String showStockChart(@RequestParam(defaultValue = "PLTR") String symbol, Model model) {
 
+        // --- ADD THIS LOGGING LINE ---
+        System.out.println(">>> REQUEST RECEIVED for CHART: " + symbol);
+        // ------------------------------
         // --- REAL DATA FETCH ---
         List<StockHistory> history = stockService.getStockHistory(symbol);
 

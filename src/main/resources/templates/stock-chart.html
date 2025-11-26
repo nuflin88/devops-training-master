@@ -7,58 +7,58 @@
 </head>
 <body>
 <h1>Historical Price Chart for <span th:text="${symbol}"></span></h1>
-<p>Data shown is currently **mock data**. The next step will connect this chart to the real Alpha Vantage API.</p>
-
-<div style="width: 800px; height: 500px; margin: 20px;">
-    <canvas id="priceChart"></canvas>
-</div>
-
 <script th:inline="javascript">
-    // 1. Get the data passed from the Spring controller
+    // Get the data passed from the Spring controller
     const stockHistory = /*[[${history}]]*/ [];
 
-    // Extract dates and prices from the StockHistory object list
+    // Extract dates and prices. Ensure we handle the BigDecimal structure (item.price.value)
     const dates = stockHistory.map(item => item.date);
-    // Use the .value property to correctly extract the BigDecimal value for Chart.js
-    const prices = stockHistory.map(item => item.price.value);
-
-    // If no history is found, display an alert
-    if (stockHistory.length === 0) {
-        alert("No historical data found for " + /*[[${symbol}]]*/ + ". Check symbol or API key/rate limit.");
-    }
-
-    // 2. Configure and render the chart
-    const ctx = document.getElementById('priceChart').getContext('2d');
-    const priceChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: dates, // X-axis (Time)
-            datasets: [{
-                label: 'Closing Price',
-                data: prices, // Y-axis (Price)
-                borderColor: 'rgb(75, 192, 192)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                tension: 0.2,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: false,
-                    title: { display: true, text: 'Price (USD)' }
-                },
-                x: {
-                    title: { display: true, text: 'Date' }
-                }
-            },
-            plugins: {
-                legend: { display: true }
-            }
+    const prices = stockHistory.map(item => {
+        // Use a safe check to handle how Thymeleaf maps BigDecimal
+        if (item.price && typeof item.price.value !== 'undefined') {
+            return item.price.value;
         }
+        // Fallback for direct double/number conversion if not BigDecimal
+        return item.price;
     });
+
+    // Only show alert if no data was received
+    if (stockHistory.length === 0) {
+        alert("No historical data found for " + /*[[${symbol}]]*/ + ". Check symbol or API key/rate limit in console logs.");
+    } else {
+        // 2. Configure and render the chart
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        const priceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates, // X-axis (Time)
+                datasets: [{
+                    label: 'Closing Price',
+                    data: prices, // Y-axis (Price)
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.2,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: { display: true, text: 'Price (USD)' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Date' }
+                    }
+                },
+                plugins: {
+                    legend: { display: true }
+                }
+            }
+        });
+    }
 </script>
 </body>
 </html>
