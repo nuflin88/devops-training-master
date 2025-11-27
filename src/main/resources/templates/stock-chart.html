@@ -7,27 +7,44 @@
 </head>
 <body>
 <h1>Historical Price Chart for <span th:text="${symbol}"></span></h1>
-<script th:inline="javascript">
-    // Get the data passed from the Spring controller
-    const stockHistory = /*[[${history}]]*/ [];
 
-    // Extract dates and prices. Ensure we handle the BigDecimal structure (item.price.value)
+<div style="width: 800px; height: 500px; margin: 20px;">
+    <canvas id="priceChart"></canvas>
+</div>
+
+<div id="data" style="display: none;" th:utext="${historyJson}"></div>
+
+<script>
+    // Get the raw JSON string from the hidden div's inner HTML
+    const historyJsonString = document.getElementById('data').innerHTML;
+
+    // Parse the JSON string into a usable JavaScript array of objects.
+    let stockHistory = [];
+    try {
+        // Check if the string is not empty before parsing
+        if (historyJsonString && historyJsonString.trim().length > 0) {
+            stockHistory = JSON.parse(historyJsonString);
+        }
+    } catch (e) {
+        console.error("Error parsing JSON data from backend:", e);
+        // This error should ONLY happen if the JSON string is malformed
+        alert("Critical Error: Failed to load chart data due to parsing error.");
+    }
+
+    // --- Data Extraction: Aggressively convert price to a number ---
     const dates = stockHistory.map(item => item.date);
     const prices = stockHistory.map(item => {
-        // Use a safe check to handle how Thymeleaf maps BigDecimal
-        if (item.price && typeof item.price.value !== 'undefined') {
-            return item.price.value;
-        }
-        // Fallback for direct double/number conversion if not BigDecimal
-        return item.price;
+        // item.price might be a string (e.g., "165.7700") due to BigDecimal serialization.
+        // parseFloat guarantees the price array contains numeric values for Chart.js.
+        return parseFloat(item.price);
     });
+    // ------------------------------------------------------------------------
 
-    // Only show alert if no data was received
-    if (stockHistory.length === 0) {
-        alert("No historical data found for " + /*[[${symbol}]]*/ + ". Check symbol or API key/rate limit in console logs.");
-    } else {
-        // 2. Configure and render the chart
+    // Only configure the chart if data exists
+    if (stockHistory.length > 0) {
+        // Find the canvas element context
         const ctx = document.getElementById('priceChart').getContext('2d');
+
         const priceChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -58,6 +75,9 @@
                 }
             }
         });
+    } else {
+        // This alert runs only if the backend returns an empty list (API error/cache miss/invalid symbol)
+        alert("No historical data found for " + '[[${symbol}]]' + ".");
     }
 </script>
 </body>
